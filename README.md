@@ -63,6 +63,8 @@ Documentation on the framework and how to use it can be found [here](https://doc
 
 ## Usage
 
+
+
 ### Simple voice agent
 
 ---
@@ -111,6 +113,79 @@ async def entrypoint(ctx: JobContext):
 if __name__ == "__main__":
     cli.run_app(WorkerOptions(entrypoint_fnc=entrypoint))
 ```
+
+```text
+intelligent_interruption_handling:
+  summary: >
+    Implemented a context-aware interruption handling layer for LiveKit agents.
+    The system distinguishes between passive acknowledgements and true interruptions
+    using STT validation, agent state tracking, and semantic filtering.
+
+  features:
+    ignore_list:
+      description: >
+        Configurable set of soft acknowledgement words that should never interrupt
+        the agent when it is actively speaking.
+      values: ["yeah", "ok", "okay", "hmm", "right", "uh-huh"]
+
+    state_based_filtering:
+      speaking_state: >
+        When the agent is generating or playing audio, all ignore_list words are
+        discarded, ensuring uninterrupted speech.
+      silent_state: >
+        When the agent is silent, the same ignore_list words are treated as valid
+        user inputs (e.g., "Yeah" after a question).
+
+    semantic_interruption:
+      description: >
+        Mixed inputs are analyzed to detect hard-interruption verbs.
+        If any command word appears (e.g., "stop", "wait", "no"), the agent interrupts
+        immediately—even if soft words appear before it.
+      hard_commands: ["stop", "wait", "no", "hold on"]
+
+    stt_validation:
+      description: >
+        Speech-to-Text transcript is used to validate whether the detected VAD event
+        is a soft acknowledgement or a true interruption.
+        Prevents false-cut scenarios where VAD fires early on words like "yeah".
+
+    real_time_constraints:
+      latency: "Designed to be real-time with imperceptible delay."
+      queues: "Interruptions are queued and verified before cutting audio."
+
+  example_behaviors:
+    long_explanation:
+      user: ["okay", "yeah", "uh-huh"]
+      agent_state: speaking
+      result: "Agent continues uninterrupted."
+
+    passive_affirmation:
+      user: ["yeah"]
+      agent_state: silent
+      result: "Agent processes input and continues the flow."
+
+    correction:
+      user: ["no stop"]
+      agent_state: speaking
+      result: "Agent stops immediately."
+
+    mixed_input:
+      user: ["yeah okay but wait"]
+      agent_state: speaking
+      result: "Agent interrupts due to the hard command."
+
+  configuration:
+    env_overrides:
+      IGNORE_WORDS: "Comma-separated list for easy customization."
+      HARD_COMMANDS: "Can be expanded based on use-case."
+
+  repository_branch:
+    created: "feature/interrupt-handler-divyansh"
+    note: "Implements the full logic layer without modifying the VAD kernel."
+
+```
+
+
 
 You'll need the following environment variables for this example:
 
